@@ -1,0 +1,42 @@
+#!/bin/bash
+# just a script for create minecraft server user.
+# Author : dd-han
+# version: 1.0
+
+## Check who run this scrupt
+if [ "$(whoami)" != "root" ]; then
+	echo "Run it as root !!"
+	exit
+fi
+
+
+## Check user exisit and Create user by adduser
+read -p "What's User Name ?" USERNAME
+USERHOME=/home/$USERNAME
+test -d $USERHOME && EXISIT="True" || EXISIT="False"
+if [ "$EXISIT" == "False" ]; then
+	echo "User not exisit. Need Create first"
+	adduser $USERNAME
+fi
+
+
+## make nessecary manage file for user
+echo "link file and create folder......"
+mkdir $USERHOME/minescript
+ln -s /srv/minescript $USERHOME/script
+
+echo "edit .bashrc"
+echo "PATH=$PATH:$USERHOME/script" >> /home/$USERNAME/.bashrc
+echo "PATH=$PATH:$USERHOME/minescript" >> /home/$USERNAME/.bashrc
+echo "alias sv='minecraft'" >> /home/$USERNAME/.bashrc
+
+
+## Make server start script for user
+cp /etc/init.d/minecraft /etc/init.d/minecraft_$USERNAME
+sed -i 's/USERNAME\=\'minecraft\'/USERNAME\=\'$USERNAME\'/g' /etc/init.d/minecraft_$USERNAME
+sed -u 's/\/home\/minecraft\//\/home\/$USERNAME\//g'
+chmod 755 /etc/init.d/minecraft_$USERNAME
+chown $USERNAME\:$USERNAME /etc/init.d/minecraft_$USERNAME
+ln -s /etc/init.d/minecraft_$USERNAME $USERHOME/minescript/minecraft
+
+echo done

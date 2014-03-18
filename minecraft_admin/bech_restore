@@ -1,0 +1,52 @@
+#!/bin/bash
+#######################################################################
+# Script : bach restore backup from *.tar, *.tbz, *.tar.gz, *,tar.bz2 #
+# Writer : dd-han                                                     #
+# Version: 2012/02/18 first testing version                           #
+# Changelog: None for now                                             #
+# Todo   : Support zipped file with *space* , other special charter   #
+#######################################################################
+# dimation vars
+ZIPFILEPATH=/mnt/PrivateTrack/temp
+EXTRACTPATH=/mnt/PrivateTrack/temp
+# Use the verbose when Decompressing
+# If want use verbose mode, use "v"
+VerboseMode=""
+# File want to Extract
+# if want to extract spe file, type some of filename in ""
+EXT_FILE=""
+
+
+# 警告使用者不得使用空白
+echo "##########################################################"
+echo "# 這是呆呆翰寫的一支小小腳本，可以隨意使用（公共領域意味 #"
+echo "# !!!!!!!注意!!!!!!!!                                    #"
+echo "# 目前尚不支援來源檔案有空白                             #"
+echo "##########################################################"
+
+
+# 警告使用者不得使用空白
+until [ "$yn" == "yes" -o "$yn" == "YES" -o "$yn" == "y" -o "$yn" == "Y" ]
+do
+	read -p "如果已經知道本程式的缺陷，請輸入Yes: " yn
+done
+
+# make a list of files order by date
+LIST=$(ls -t $ZIPFILEPATH\/*$EXT_FILE*.t??*)
+
+# rename the restore folder to XXX.date
+#test -d $EXTRACTPATH && EXIST="True" || EXIST="False"
+#if [ "$EXIST" == "True" ]; then
+#	echo extract folder exist!! It will be rename
+#	DATE_TIME=$(date "+%Y-%m-%d_%H:%M:%S")
+#	New_Folder=$(echo $EXTRACTPATH | sed 's/\/$//g')$DATE_TIME
+#	mv $EXTRACTPATH $New_Folder
+#fi
+#mkdir $EXTRACTPATH
+
+# unzip
+for ZIPPEDFILE in $LIST
+do
+	echo restoring $ZIPPEDFILE
+	tar -x$VerbodeMode -f $ZIPPEDFILE -C $EXTRACTPATH
+done

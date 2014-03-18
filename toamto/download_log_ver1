@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# A script for backup Tomato WebUsage Log from remote ( or Tomato locale :D )
+# Author : dd-han
+# Version : 1.0 
+# Todo :
+# 	
+#
+# Changelog :
+#	2012-05-21: First Version
+#	2012-05-22: Fix old log remove bug and remove patch file after patch
+
+LOGPATH=~/log
+FILENAME_DOMAIN=domains.log
+FILENAME_SEARCH=search.log
+TOMATO_IP=
+## Get the ID at WebAdminPage - Web Usage - Download - HyperLink :
+## http://TOMATO-IP/webmon_recent_searches?_http_id=--==YourID==--
+TOMATO_ID=
+TOMATO_AdminUser=
+TOMATO_AdminPass=
+MAX_LOG_SIZE_KB=100
+
+
+## CHECK THE FOLDER EXISIT
+test -d $LOGPAH && EXIST="True" || EXIST="False"
+if [ "$EXIST" == "False" ]; then
+        echo folder not exist!! Creating
+        mkdir -p $LOGPAH
+fi
+
+
+## CHECK File domain.log Exisit
+test -f $LOGPATH\/$FILENAME_DOMAIN && EXIST="True" || EXIST="False"
+if [ "$EXIST" == "False" ]; then
+        echo $FILENAME_DOMAIN not exist!! Creating
+	touch $LOGPAH\/$FILENAME_DOMAIN
+fi
+
+
+## Check File search.log Exisit
+test -f $LOGPATH\/$FILENAME_SEARCH && EXIST="True" || EXIST="False"
+if [ "$EXIST" == "False" ]; then
+        echo $FILENAME_SEARCH not exist!! Creating
+	touch $LOGPAH\/$FILENAME_SEARCH
+fi
+
+
+## DOWNLAOD LOG FILE for PATCH
+wget http\:\/\/$TOMATO_IP\/webmon_recent_domains\?_http_id\=$TOMATO_ID -O $LOGPATH\/$FILENAME_DOMAIN\.new --user=$TOMATO_AdminUser --password=$TOMATO_AdminPass
+wget http\:\/\/$TOMATO_IP\/webmon_recent_searches\?_http_id\=$TOMATO_ID -O $LOGPATH\/$FILENAME_SEARCH\.new --user=$TOMATO_AdminUser --password=$TOMATO_AdminPass
+
+
+## Make Patch from new and old file
+diff -Naur $LOGPATH\/$FILENAME_DOMAIN $LOGPATH\/$FILENAME_DOMAIN\.new > $LOGPATH\/$FILENAME_DOMAIN\.patch
+diff -Naur $LOGPATH\/$FILENAME_SEARCH $LOGPATH\/$FILENAME_SEARCH\.new > $LOGPATH\/$FILENAME_SEARCH\.patch
+
+
+## Delete New file ( only need is patch )
+rm $LOGPATH\/$FILENAME_DOMAIN\.new
+rm $LOGPATH\/$FILENAME_SEARCH\.new
+
+
+## PATCH old log file
+patch -p0 < $LOGPATH\/$FILENAME_DOMAIN\.patch
+patch -p0 < $LOGPATH\/$FILENAME_SEARCH\.patch
+
+## Remove PATCH file
+rm $LOGPATH\/$FILENAME_DOMAIN\.patch
+rm $LOGPATH\/$FILENAME_SEARCH\.patch
+
+## Input File Size
+FILESIZE_DOMAIN=$(du $LOGPATH\/$FILENAME_DOMAIN | sed 's/\t.*$//g')
+FILESIZE_SEARCH=$(du $LOGPATH\/$FILENAME_SEARCH | sed 's/\t.*$//g')
+
+## Input now DATE for filename
+DATE_TIME=$(date "+%Y-%m-%d_%H:%M:%S")
+
+## Check File size
+FILE_OVER=False
+test $FILESIZE_DOMAIN -ge $MAX_LOG_SIZE_KB && FILE_OVER=True || FILE_OVER=$FILE_OVER
+test $FILESIZE_SEARCH -ge $MAX_LOG_SIZE_KB && FILE_OVER=True || FILE_OVER=$FILE_OVER
+if [ "$FILE_OVER" == "True" ]; then
+        echo One of LogFile over $MAX_LOG_SIZE_KB KB, Spiliting...
+        mv $LOGPAH\/$FILENAME_DOMAIN $LOGPAH\/$FILENAME_DOMAIN\_last_$DATE_TIME
+	mv $LOGPAH\/$FILENAME_SEARCH $LOGPAH\/$FILENAME_SEARCH\_last_$DATE_TIME
+fi
+
+echo "all done"
