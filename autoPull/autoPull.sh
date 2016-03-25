@@ -1,7 +1,7 @@
 #!/bin/bash
 LIST='/home/dd-han/git/personal-scripts/autoPull/test.csv'
 
-totalLine=`wc -l test.csv | cut -d ' ' -f 1`
+totalLine=`wc -l $LIST | cut -d ' ' -f 1`
 
 for i in `seq 1 $totalLine`;do
 	line=`sed -n "${i},${i}p" "$LIST"`
